@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
 func gen(nums ...int) <-chan int {
@@ -25,14 +26,36 @@ func sq(in <- chan int) <-chan int {
 	return out
 }
 
+func merge(cs ...<-chan int) <-chan int {
+	var wg sync.WaitGroup
+	out := make(chan int)
+	output := func(c <-chan int) {
+		for n := range c {
+			out <- n
+		}
+		wg.Done()
+	}
+	wg.Add(len(cs))
+	for _,c := range cs {
+		go output(c)
+	}
+	go func() {
+		wg.Wait()
+		close(out)
+	} ()
+	return out
+}
+
 func main() {
 	fmt.Printf("Begin\n")
 	
-	c := gen(2, 3)
-	out := sq(c)
+	in := gen(2, 3)
+	c1 := sq(in)
+	c2 := sq(in)
 	
-	fmt.Println(<-out)
-	fmt.Println(<-out)
+	for n := range merge(c1, c2) {
+		fmt.Println(n)
+	}
 	
 	fmt.Printf("End\n")
 }
