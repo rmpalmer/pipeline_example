@@ -29,21 +29,36 @@ func sq(in <- chan int) <-chan int {
 
 func merge(cs ...<-chan int) <-chan int {
 	var wg sync.WaitGroup
+	
+	// the output channel 
 	out := make(chan int)
+	
+	// the function for merging; will one for each input channel
 	output := func(c <-chan int) {
+	
+		// read all input 
 		for n := range c {
 			out <- n
 		}
+		// ..then signal to wait group
 		wg.Done()
 	}
+	
+	// wait to get a done message from each of the input channels
 	wg.Add(len(cs))
+	
+	// launch a consumer goroutine for each input channel
 	for _,c := range cs {
 		go output(c)
 	}
+	
+	// final goroutine that waits for completions
 	go func() {
 		wg.Wait()
 		close(out)
 	} ()
+	
+	// give the output channel back to the caller.
 	return out
 }
 
