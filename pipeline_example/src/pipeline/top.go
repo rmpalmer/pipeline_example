@@ -27,7 +27,7 @@ func sq(in <- chan int) <-chan int {
 	return out
 }
 
-func merge(cs ...<-chan int) <-chan int {
+func merge(done <-chan struct {}, cs ...<-chan int) <-chan int {
 	var wg sync.WaitGroup
 	
 	// the output channel 
@@ -36,10 +36,14 @@ func merge(cs ...<-chan int) <-chan int {
 	// the function for merging; will one for each input channel
 	output := func(c <-chan int) {
 	
-		// read all input 
+		// read all input until done?
 		for n := range c {
-			out <- n
+			select {
+				case out <- n:
+				case <-done:
+			}
 		}
+	
 		// ..then signal to wait group
 		wg.Done()
 	}
@@ -69,9 +73,16 @@ func main() {
 	c1 := sq(in)
 	c2 := sq(in)
 	
-	for n := range merge(c1, c2) {
-		fmt.Println(n)
-	}
+	// a channel to tell the producers to stop
+	done := make (chan struct{}, 2)
+	
+	// instead of consuming from all channels, consume only one
+	out := merge(done, c1, c2)
+	fmt.Println(<-out)
+	
+	// tell remaining senders to cancel
+	done <- struct{}{}
+	done <- struct{}{}
 	
 	fmt.Printf("End\n")
 }
