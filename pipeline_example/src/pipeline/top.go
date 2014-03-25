@@ -22,6 +22,7 @@ func sq(in <- chan int) <-chan int {
 		for n := range in {
 			out <- n*n
 		}
+		close(out)
 	}()
 	return out
 }
