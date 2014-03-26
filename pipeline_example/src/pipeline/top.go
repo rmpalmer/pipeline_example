@@ -69,7 +69,7 @@ func merge(done <-chan struct {}, cs ...<-chan int) <-chan int {
 }
 
 func main() {
-	fmt.Printf("Begin\n")
+	fmt.Printf("Begin Pipeline\n")
 	
 	in := gen(12, 3)
 	c1 := sq(in)
@@ -83,6 +83,6 @@ func main() {
 	out := merge(done, c1, c2)
 	fmt.Println(<-out)
 		
-	fmt.Printf("End\n")
+	fmt.Printf("End Pipeline\n")
 }
 
