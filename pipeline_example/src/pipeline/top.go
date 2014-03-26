@@ -36,11 +36,13 @@ func merge(done <-chan struct {}, cs ...<-chan int) <-chan int {
 	// the function for merging; will one for each input channel
 	output := func(c <-chan int) {
 	
+		defer wg.Done()
 		// read all input until done?
 		for n := range c {
 			select {
 				case out <- n:
 				case <-done:
+					return
 			}
 		}
 	
@@ -69,21 +71,18 @@ func merge(done <-chan struct {}, cs ...<-chan int) <-chan int {
 func main() {
 	fmt.Printf("Begin\n")
 	
-	in := gen(2, 3)
+	in := gen(5, 3)
 	c1 := sq(in)
 	c2 := sq(in)
 	
 	// a channel to tell the producers to stop
-	done := make (chan struct{}, 2)
+	done := make (chan struct{})
+	defer close(done)
 	
 	// instead of consuming from all channels, consume only one
 	out := merge(done, c1, c2)
 	fmt.Println(<-out)
-	
-	// tell remaining senders to cancel
-	done <- struct{}{}
-	done <- struct{}{}
-	
+		
 	fmt.Printf("End\n")
 }
 
