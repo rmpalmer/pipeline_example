@@ -71,7 +71,7 @@ func merge(done <-chan struct {}, cs ...<-chan int) <-chan int {
 func main() {
 	fmt.Printf("Begin\n")
 	
-	in := gen(5, 3)
+	in := gen(12, 3)
 	c1 := sq(in)
 	c2 := sq(in)
 	
